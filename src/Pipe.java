@@ -7,10 +7,10 @@ public class Pipe {
     int width = 60;
 
     int gapY;
-    int gapHeight = 150;
+    int gapHeight = 190;
 
     int speed = 3;
-
+    boolean passed = false; // czy ptak już przeszedł przez tę rurę
     BufferedImage image;
 
     public Pipe(int startX, BufferedImage image) {

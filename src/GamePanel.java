@@ -12,6 +12,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     Timer timer;
     Bird bird;
     boolean gameOver = false;
+    int score = 0;
+    int highScore = 0;           // rekord odczytany z pliku
+    private final String fileName = "highscore.txt"; // nazwa pliku
+    boolean newHighScore = false;  // czy pobito nowy rekord w tej grze
+    int blinkCounter = 0;          // licznik do migania napisu
+
+
 
 
     BufferedImage background;
@@ -23,12 +30,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         this.addKeyListener(this);
 
         loadImages();
+        loadHighScore();      // wczytanie highscore przy starcie
 
         bird = new Bird(birdImage);
 
         pipes = new ArrayList<>();
         createPipe(); // pierwsza rura na start
-
 
         timer = new Timer(20, this);
         timer.start();
@@ -37,15 +44,61 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void createPipe() {
         pipes.add(new Pipe(400, pipeImage));
     }
-
-    private void resetGame() {
-        bird = new Bird(birdImage);
-        pipes.clear();
-        createPipe(); // <-- pierwsza rura
-        gameOver = false;
-        timer.start();
+    // wczytanie highscore z pliku
+    private void loadHighScore() {
+        try {
+            java.io.File file = new java.io.File(fileName);
+            if (file.exists()) {
+                java.util.Scanner scanner = new java.util.Scanner(file);
+                if (scanner.hasNextInt()) {
+                    highScore = scanner.nextInt();
+                }
+                scanner.close();
+            } else {
+                highScore = 0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            highScore = 0;
+        }
     }
 
+    // zapis highscore do pliku
+    private void saveHighScore() {
+        try {
+            java.io.FileWriter writer = new java.io.FileWriter(fileName);
+            writer.write(String.valueOf(highScore));
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void resetGame() {
+        score = 0;
+        bird = new Bird(birdImage);
+        pipes.clear();
+        createPipe();
+        gameOver = false;
+        timer.start();for (Pipe pipe : pipes) {
+            pipe.passed = false;
+        }
+        newHighScore = false;
+        blinkCounter = 0;
+
+
+    }
+
+
+
+    private void checkHighScore() {
+        if (score > highScore) {
+            highScore = score;
+            saveHighScore();
+            newHighScore = true;  // ustaw flagę, że pobito rekord
+            blinkCounter = 0;     // reset licznika migania
+        }
+    }
 
 
 
@@ -75,8 +128,31 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         //  ptak
         bird.draw(g);
+        // bieżący wynik
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Georgia", Font.BOLD, 24));
+        g.drawString("Score: " + score, 10, 30);
 
-        // 4️⃣ GAME OVER tekst
+// highscore
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("Georgia", Font.PLAIN, 18));
+        g.drawString("Highscore: " + highScore, 10, 60);
+
+
+        g.setFont(new Font("Georgia", Font.BOLD, 24));
+        g.drawString("Score: " + score, 10, 30);
+// NEW HIGHSCORE! migający napis
+        if (newHighScore) {
+            if (blinkCounter < 20) { // pierwsza połowa cyklu
+                g.setColor(Color.RED);
+            } else {                 // druga połowa cyklu
+                g.setColor(Color.WHITE);
+            }
+            g.setFont(new Font("Georgia", Font.BOLD, 22));
+            g.drawString("NEW HIGHSCORE!", 200 - 100, 90); // wyśrodkowane
+        }
+
+        //  GAME OVER tekst
         if (gameOver) {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Georgia", Font.BOLD, 32));
@@ -98,11 +174,19 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             for (Pipe pipe : pipes) {
                 pipe.update();
 
+                // kolizje
                 if (pipe.getTopBounds().intersects(bird.getBounds()) ||
                         pipe.getBottomBounds().intersects(bird.getBounds())) {
 
                     gameOver = true;
                     timer.stop();
+                    checkHighScore();
+                }
+
+                // punkt za przejście
+                if (!pipe.passed && bird.x > pipe.x + pipe.width) {
+                    score++;
+                    pipe.passed = true;
                 }
             }
 
@@ -112,15 +196,26 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 createPipe();
             }
 
-
+            // game over jeśli ptak wyleci poza ekran
             if (bird.y > 550 || bird.y < 0) {
                 gameOver = true;
                 timer.stop();
+                checkHighScore();
+            }
+        }
+        // animacja migania „NEW HIGHSCORE!”
+        if (newHighScore) {
+            blinkCounter++;
+            if (blinkCounter > 40) { // zmiana koloru co ~40 klatek (~0.8 sekundy przy Timer=20ms)
+                blinkCounter = 0;
             }
         }
 
+
         repaint();
     }
+
+
 
 
 
