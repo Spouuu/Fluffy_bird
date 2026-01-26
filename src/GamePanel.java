@@ -17,6 +17,20 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private final String fileName = "highscore.txt"; // nazwa pliku
     boolean newHighScore = false;  // czy pobito nowy rekord w tej grze
     int blinkCounter = 0;          // licznik do migania napisu
+    int bgX1 = 0;
+    int bgX2 = 400;     // szerokość okna
+    int bgSpeed = 1;    // prędkość przesuwania tła
+    Color[] rainbow = {
+            Color.RED,
+            Color.ORANGE,
+            Color.YELLOW,
+            Color.GREEN,
+            Color.CYAN,
+            Color.BLUE,
+            Color.MAGENTA
+    };
+    int rainbowIndex = 0;
+    int rainbowDelay = 0;
 
 
 
@@ -28,6 +42,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         this.setPreferredSize(new Dimension(400, 600));
         this.setFocusable(true);
         this.addKeyListener(this);
+
 
         loadImages();
         loadHighScore();      // wczytanie highscore przy starcie
@@ -75,6 +90,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void resetGame() {
+        bgX1 = 0;
+        bgX2 = 400;
         score = 0;
         bird = new Bird(birdImage);
         pipes.clear();
@@ -118,7 +135,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         super.paintComponent(g);
 
         // najpierw tło
-        g.drawImage(background, 0, 0, 400, 600, null);
+        g.drawImage(background, bgX1, 0, 400, 600, null);
+        g.drawImage(background, bgX2, 0, 400, 600, null);
+
 
         //  rury
         for (Pipe pipe : pipes) {
@@ -142,14 +161,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g.drawString("Score: " + score, 10, 30);
 // NEW HIGHSCORE! migający napis
         if (newHighScore) {
-            if (blinkCounter < 20) { // pierwsza połowa cyklu
-                g.setColor(Color.RED);
-            } else {                 // druga połowa cyklu
-                g.setColor(Color.WHITE);
-            }
+            g.setColor(rainbow[rainbowIndex]);
             g.setFont(new Font("Georgia", Font.BOLD, 22));
-            g.drawString("NEW HIGHSCORE!", 200 - 100, 90); // wyśrodkowane
+            g.drawString("NEW HIGHSCORE!", 100, 90);
         }
+
 
         //  GAME OVER tekst
         if (gameOver) {
@@ -166,6 +182,17 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (!gameOver) {
+            bgX1 -= bgSpeed;
+            bgX2 -= bgSpeed;
+
+            if (bgX1 + 400 <= 0) {
+                bgX1 = bgX2 + 400;
+            }
+            if (bgX2 + 400 <= 0) {
+                bgX2 = bgX1 + 400;
+            }
+        }
 
         if (!gameOver) {
             bird.update();
@@ -198,7 +225,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             // game over jeśli ptak wyleci poza ekran
             if (bird.y > 550 || bird.y < 0) {
                 gameOver = true;
-                timer.stop();
                 checkHighScore();
             }
         }
@@ -210,6 +236,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
+        // animacja tęczowego highscore
+        if (newHighScore) {
+            rainbowDelay++;
+
+            if (rainbowDelay > 5) {   // im mniejsze = szybciej miga
+                rainbowIndex = (rainbowIndex + 1) % rainbow.length;
+                rainbowDelay = 0;
+            }
+        }
 
         repaint();
     }
