@@ -86,7 +86,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         newHighScore = false;
         blinkCounter = 0;
 
-
     }
 
 
