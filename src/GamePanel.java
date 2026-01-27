@@ -6,256 +6,273 @@ import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.util.ArrayList;
 
-
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
-    Timer timer;
-    Bird bird;
-    boolean gameOver = false;
-    int score = 0;
-    int highScore = 0;           // rekord odczytany z pliku
-    private final String fileName = "highscore.txt"; // nazwa pliku
-    boolean newHighScore = false;  // czy pobito nowy rekord w tej grze
-    int blinkCounter = 0;          // licznik do migania napisu
-    int bgX1 = 0;
-    int bgX2 = 400;     // szerokość okna
-    int bgSpeed = 1;    // prędkość przesuwania tła
-    Color[] rainbow = {
-            Color.RED,
-            Color.ORANGE,
-            Color.YELLOW,
-            Color.GREEN,
-            Color.CYAN,
-            Color.BLUE,
-            Color.MAGENTA
+    // === GAME ===
+    private Timer timer;
+    private Bird bird;
+    private boolean gameOver = false;
+
+    private int score = 9;
+    private int highScore = 0;
+    private boolean highScoreBeatenThisGame = false;
+
+    // === FILE ===
+    private static final String FILE_NAME = "highscore.txt";
+
+    // === BACKGROUND ===
+    private int bgX1 = 0;
+    private int bgX2 = 400;
+    private static final int BG_SPEED = 1;
+    private BufferedImage backgroundSnow;
+
+
+    // === HIGHSCORE ANIMATION ===
+    private boolean newHighScore = false;
+    private int highScoreTimer = 0;
+    private static final int HIGHSCORE_DURATION = 100;
+
+    private final Color[] rainbow = {
+            Color.RED, Color.ORANGE, Color.YELLOW,
+            Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA
     };
-    int rainbowIndex = 0;
-    int rainbowDelay = 0;
-    int highScoreTimer = 0;
-    static final int HIGHSCORE_DURATION = 100;
-    boolean highScoreShown = false;
-    ArrayList<Pipe> pipes = new ArrayList<>();
-    BufferedImage pipeImage; // ~3 sekundy (150 * 20ms)
+    private int rainbowIndex = 0;
+
+    // === OBJECTS ===
+    private final ArrayList<Pipe> pipes = new ArrayList<>();
+
+    // === IMAGES ===
+    private BufferedImage background;
+    private BufferedImage birdImage;
+    private BufferedImage pipeImage;
+    private BufferedImage pipeSnowImage;
+    private static final int NORMAL_GAP = 190;
+    private static final int SNOW_GAP = 140;
+    private boolean snowMode = false;
 
 
 
-
-
-
-
-    BufferedImage background;
-    BufferedImage birdImage;
+    // =========================
 
     public GamePanel() {
-        this.setPreferredSize(new Dimension(400, 600));
-        this.setFocusable(true);
-        this.addKeyListener(this);
-
+        setPreferredSize(new Dimension(400, 600));
+        setFocusable(true);
+        addKeyListener(this);
 
         loadImages();
-        loadHighScore();      // wczytanie highscore przy starcie
+        loadHighScore();
 
         bird = new Bird(birdImage);
-
-        pipes = new ArrayList<>();
-        createPipe(); // pierwsza rura na start
+        spawnPipe();
 
         timer = new Timer(20, this);
         timer.start();
     }
 
-    private void createPipe() {
-        pipes.add(new Pipe(400, pipeImage));
+    // === GAME LOOP ===
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (!gameOver) {
+            updateBackground();
+            bird.update();
+            updatePipes();
+            checkOutOfBounds();
+        }
+
+        updateHighScoreAnimation();
+        repaint();
     }
-    // wczytanie highscore z pliku
-    private void loadHighScore() {
-        try {
-            java.io.File file = new java.io.File(fileName);
-            if (file.exists()) {
-                java.util.Scanner scanner = new java.util.Scanner(file);
-                if (scanner.hasNextInt()) {
-                    highScore = scanner.nextInt();
-                }
-                scanner.close();
-            } else {
-                highScore = 0;
+
+    // === UPDATE ===
+
+    private void updateBackground() {
+        bgX1 -= BG_SPEED;
+        bgX2 -= BG_SPEED;
+
+        if (bgX1 + 400 <= 0) bgX1 = bgX2 + 400;
+        if (bgX2 + 400 <= 0) bgX2 = bgX1 + 400;
+    }
+
+    private void updatePipes() {
+        for (Pipe pipe : pipes) {
+            pipe.update();
+
+            if (pipe.collidesWith(bird)) {
+                endGame();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            highScore = 0;
+
+            if (!pipe.passed && bird.x > pipe.x + pipe.width) {
+                pipe.passed = true;
+                score++;
+
+                if (score == 10) {
+                    snowMode = true;
+                }
+
+                checkHighScore();
+            }
+        }
+
+        if (!pipes.isEmpty() && pipes.get(0).x + 60 < 0) {
+            pipes.remove(0);
+            spawnPipe();
         }
     }
 
-    // zapis highscore do pliku
-    private void saveHighScore() {
-        try {
-            java.io.FileWriter writer = new java.io.FileWriter(fileName);
-            writer.write(String.valueOf(highScore));
-            writer.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+
+    private void checkOutOfBounds() {
+        if (bird.y < 0 || bird.y > 550) {
+            endGame();
         }
     }
 
-    private void resetGame() {
-        bgX1 = 0;
-        bgX2 = 400;
-        score = 0;
-        bird = new Bird(birdImage);
-        pipes.clear();
-        createPipe();
-        gameOver = false;
-        timer.start();for (Pipe pipe : pipes) {
-            pipe.passed = false;
-        }
-        newHighScore = false;
-        blinkCounter = 0;
-        highScoreShown = false;
-
-
-    }
-
-
+    // === HIGHSCORE ===
 
     private void checkHighScore() {
-        if (score > highScore && !highScoreShown) {
-            highScore = score;
-            saveHighScore();
+        if (!highScoreBeatenThisGame && score > highScore) {
+            highScoreBeatenThisGame = true;
             newHighScore = true;
             highScoreTimer = 0;
-            highScoreShown = true;
         }
     }
 
+    private void updateHighScoreAnimation() {
+        if (!newHighScore) return;
 
+        highScoreTimer++;
 
+        if (highScoreTimer % 5 == 0) {
+            rainbowIndex = (rainbowIndex + 1) % rainbow.length;
+        }
 
-
-    private void loadImages() {
-        try {
-            background = ImageIO.read(getClass().getResource("/images/background.png"));
-            birdImage = ImageIO.read(getClass().getResource("/images/bird.png"));
-            pipeImage = ImageIO.read(getClass().getResource("/images/pipe.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (highScoreTimer > HIGHSCORE_DURATION) {
+            newHighScore = false;
         }
     }
 
+    private void endGame() {
+        if (!gameOver) {
+            gameOver = true;
+            timer.stop();
+
+            if (score > highScore) {
+                highScore = score;
+                saveHighScore();
+            }
+        }
+    }
+
+    // === RESET ===
+
+    private void resetGame() {
+        score = 0;
+        gameOver = false;
+        newHighScore = false;
+        highScoreBeatenThisGame = false;
+
+        bird = new Bird(birdImage);
+        pipes.clear();
+        spawnPipe();
+
+        bgX1 = 0;
+        bgX2 = 400;
+
+        timer.start();
+        snowMode = false;
+    }
+
+    // === DRAW ===
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // najpierw tło
         g.drawImage(background, bgX1, 0, 400, 600, null);
         g.drawImage(background, bgX2, 0, 400, 600, null);
+        BufferedImage bgToDraw = snowMode ? backgroundSnow : background;
+        g.drawImage(bgToDraw, bgX1, 0, 400, 600, null);
+        g.drawImage(bgToDraw, bgX2, 0, 400, 600, null);
 
 
-        //  rury
-        for (Pipe pipe : pipes) {
-            pipe.draw(g);
-        }
-
-        //  ptak
+        for (Pipe pipe : pipes) pipe.draw(g);
         bird.draw(g);
-        // bieżący wynik
-        g.setColor(Color.WHITE);
+
+        drawUI(g);
+    }
+
+    private void drawUI(Graphics g) {
+        g.setColor(Color.GRAY);
         g.setFont(new Font("Georgia", Font.BOLD, 24));
         g.drawString("Score: " + score, 10, 30);
 
-// highscore
-        g.setColor(Color.YELLOW);
         g.setFont(new Font("Georgia", Font.PLAIN, 18));
+        g.setColor(Color.YELLOW);
         g.drawString("Highscore: " + highScore, 10, 60);
 
-
-        g.setFont(new Font("Georgia", Font.BOLD, 24));
-        g.drawString("Score: " + score, 10, 30);
-        // NEW HIGHSCORE! migający napis
         if (newHighScore && (highScoreTimer / 10) % 2 == 0) {
             g.setColor(rainbow[rainbowIndex]);
             g.setFont(new Font("Georgia", Font.BOLD, 22));
-            g.drawString("NEW HIGHSCORE!", 100, 90);
+            g.drawString("NEW HIGHSCORE!", 90, 100);
         }
 
-
-
-        //  GAME OVER tekst
         if (gameOver) {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Georgia", Font.BOLD, 32));
             g.drawString("GAME OVER", 90, 250);
 
             g.setFont(new Font("Georgia", Font.PLAIN, 16));
-            g.drawString("Press R to revive", 115, 290);
+            g.drawString("Press R to restart", 115, 290);
         }
     }
 
+    // === IO ===
 
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-
-        if (!gameOver) {
-            bgX1 -= bgSpeed;
-            bgX2 -= bgSpeed;
-
-            if (bgX1 + 400 <= 0) bgX1 = bgX2 + 400;
-            if (bgX2 + 400 <= 0) bgX2 = bgX1 + 400;
-
-            bird.update();
-
-            for (Pipe pipe : pipes) {
-                pipe.update();
-
-                if (pipe.getTopBounds().intersects(bird.getBounds()) ||
-                        pipe.getBottomBounds().intersects(bird.getBounds())) {
-
-                    gameOver = true;
-                    timer.stop();
+    private void loadHighScore() {
+        try {
+            java.io.File file = new java.io.File(FILE_NAME);
+            if (file.exists()) {
+                java.util.Scanner scanner = new java.util.Scanner(file);
+                if (scanner.hasNextInt()) {
+                    highScore = scanner.nextInt();
                 }
-
-                if (!pipe.passed && bird.x > pipe.x + pipe.width) {
-                    score++;
-                    pipe.passed = true;
-                    checkHighScore();
-                }
+                scanner.close();
             }
+        } catch (Exception ignored) {}
+    }
 
-            if (!pipes.isEmpty() && pipes.get(0).x + 60 < 0) {
-                pipes.remove(0);
-                createPipe();
-            }
+    private void saveHighScore() {
+        try (java.io.FileWriter writer = new java.io.FileWriter(FILE_NAME)) {
+            writer.write(String.valueOf(highScore));
+        } catch (IOException ignored) {}
+    }
 
-            if (bird.y > 550 || bird.y < 0) {
-                gameOver = true;
-            }
+    private void loadImages() {
+        try {
+            background = ImageIO.read(getClass().getResource("/images/background.png"));
+            birdImage = ImageIO.read(getClass().getResource("/images/bird.png"));
+            pipeImage = ImageIO.read(getClass().getResource("/images/pipe.png"));
+            pipeSnowImage   = ImageIO.read(getClass().getResource("/images/pipe-snow.png"));
+            backgroundSnow = ImageIO.read(getClass().getResource("/images/background-snow.png"));
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
 
-        // NEW HIGHSCORE animacja
-        if (newHighScore) {
-            highScoreTimer++;
+    private void spawnPipe() {
+        BufferedImage img = snowMode ? pipeSnowImage : pipeImage;
+        int gap = snowMode ? SNOW_GAP : NORMAL_GAP;
 
-            if (highScoreTimer % 5 == 0) {
-                rainbowIndex = (rainbowIndex + 1) % rainbow.length;
-            }
-
-            if (highScoreTimer > HIGHSCORE_DURATION) {
-                newHighScore = false;
-            }
-        }
-
-        repaint();
+        pipes.add(new Pipe(400, img, gap));
     }
 
 
-
-
-
+    // === INPUT ===
 
     @Override
     public void keyPressed(KeyEvent e) {
-
         if (e.getKeyCode() == KeyEvent.VK_SPACE && !gameOver) {
             bird.jump();
         }
@@ -265,8 +282,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
-
 }

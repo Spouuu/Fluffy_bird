@@ -22,7 +22,7 @@ public class Bird {
     }
 
     public void draw(Graphics g) {
-        g.drawImage(image, x, y, 50, 50, null);
+        g.drawImage(image, x, y, 36, 30, null);
     }
     public Rectangle getBounds() {
         return new Rectangle(x, y, 50, 50);
