@@ -31,6 +31,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     };
     int rainbowIndex = 0;
     int rainbowDelay = 0;
+    int highScoreTimer = 0;
+    static final int HIGHSCORE_DURATION = 100;
+    boolean highScoreShown = false;
+    ArrayList<Pipe> pipes = new ArrayList<>();
+    BufferedImage pipeImage; // ~3 sekundy (150 * 20ms)
+
+
+
 
 
 
@@ -102,19 +110,24 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
         newHighScore = false;
         blinkCounter = 0;
+        highScoreShown = false;
+
 
     }
 
 
 
     private void checkHighScore() {
-        if (score > highScore) {
+        if (score > highScore && !highScoreShown) {
             highScore = score;
             saveHighScore();
-            newHighScore = true;  // ustaw flagę, że pobito rekord
-            blinkCounter = 0;     // reset licznika migania
+            newHighScore = true;
+            highScoreTimer = 0;
+            highScoreShown = true;
         }
     }
+
+
 
 
 
@@ -127,8 +140,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             e.printStackTrace();
         }
     }
-    ArrayList<Pipe> pipes = new ArrayList<>();
-    BufferedImage pipeImage;
+
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -159,12 +171,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         g.setFont(new Font("Georgia", Font.BOLD, 24));
         g.drawString("Score: " + score, 10, 30);
-// NEW HIGHSCORE! migający napis
-        if (newHighScore) {
+        // NEW HIGHSCORE! migający napis
+        if (newHighScore && (highScoreTimer / 10) % 2 == 0) {
             g.setColor(rainbow[rainbowIndex]);
             g.setFont(new Font("Georgia", Font.BOLD, 22));
             g.drawString("NEW HIGHSCORE!", 100, 90);
         }
+
 
 
         //  GAME OVER tekst
@@ -182,72 +195,59 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
         if (!gameOver) {
             bgX1 -= bgSpeed;
             bgX2 -= bgSpeed;
 
-            if (bgX1 + 400 <= 0) {
-                bgX1 = bgX2 + 400;
-            }
-            if (bgX2 + 400 <= 0) {
-                bgX2 = bgX1 + 400;
-            }
-        }
+            if (bgX1 + 400 <= 0) bgX1 = bgX2 + 400;
+            if (bgX2 + 400 <= 0) bgX2 = bgX1 + 400;
 
-        if (!gameOver) {
             bird.update();
 
             for (Pipe pipe : pipes) {
                 pipe.update();
 
-                // kolizje
                 if (pipe.getTopBounds().intersects(bird.getBounds()) ||
                         pipe.getBottomBounds().intersects(bird.getBounds())) {
 
                     gameOver = true;
                     timer.stop();
-                    checkHighScore();
                 }
 
-                // punkt za przejście
                 if (!pipe.passed && bird.x > pipe.x + pipe.width) {
                     score++;
                     pipe.passed = true;
+                    checkHighScore();
                 }
             }
 
-            // usuwanie rur poza ekranem
             if (!pipes.isEmpty() && pipes.get(0).x + 60 < 0) {
                 pipes.remove(0);
                 createPipe();
             }
 
-            // game over jeśli ptak wyleci poza ekran
             if (bird.y > 550 || bird.y < 0) {
                 gameOver = true;
-                checkHighScore();
-            }
-        }
-        // animacja migania „NEW HIGHSCORE!”
-        if (newHighScore) {
-            blinkCounter++;
-            if (blinkCounter > 40) { // zmiana koloru co ~40 klatek (~0.8 sekundy przy Timer=20ms)
-                blinkCounter = 0;
             }
         }
 
-        // animacja tęczowego highscore
+        // NEW HIGHSCORE animacja
         if (newHighScore) {
-            rainbowDelay++;
+            highScoreTimer++;
 
-            if (rainbowDelay > 5) {   // im mniejsze = szybciej miga
+            if (highScoreTimer % 5 == 0) {
                 rainbowIndex = (rainbowIndex + 1) % rainbow.length;
-                rainbowDelay = 0;
+            }
+
+            if (highScoreTimer > HIGHSCORE_DURATION) {
+                newHighScore = false;
             }
         }
 
         repaint();
     }
+
 
 
 
