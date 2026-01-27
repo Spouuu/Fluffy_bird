@@ -13,7 +13,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Bird bird;
     private boolean gameOver = false;
 
-    private int score = 9;
+    private int score = 0;
     private int highScore = 0;
     private boolean highScoreBeatenThisGame = false;
 
@@ -46,8 +46,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private BufferedImage birdImage;
     private BufferedImage pipeImage;
     private BufferedImage pipeSnowImage;
-    private static final int NORMAL_GAP = 190;
-    private static final int SNOW_GAP = 140;
+    private static final int NORMAL_GAP = 220;
+    private static final int SNOW_GAP = 160;
     private boolean snowMode = false;
 
 

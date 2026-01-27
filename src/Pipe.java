@@ -46,7 +46,6 @@ public class Pipe {
         return new Rectangle(x, bottomY, width, 600 - bottomY);
     }
 
-    // 👇 NOWA METODA
     public boolean collidesWith(Bird bird) {
         return getTopBounds().intersects(bird.getBounds()) ||
                 getBottomBounds().intersects(bird.getBounds());
