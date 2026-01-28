@@ -3,12 +3,26 @@ import javax.swing.*;
 public class GameFrame extends JFrame {
 
     public GameFrame() {
-        this.add(new GamePanel());
-        this.setTitle("Fluffy Bird");
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setResizable(false);
-        this.pack();
-        this.setLocationRelativeTo(null);
-        this.setVisible(true);
+        setTitle("Fluffy Bird");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setResizable(false);
+
+        showMenu();
+        Assets.load();
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void showMenu() {
+        setContentPane(new StartMenuPanel(this::startGame));
+        revalidate();
+        repaint();
+    }
+
+    private void startGame() {
+        setContentPane(new GamePanel(this::showMenu));
+        revalidate();
+        repaint();
     }
 }

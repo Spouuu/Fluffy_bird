@@ -9,22 +9,29 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private final GameState state = new GameState();
     private final Background background = new Background();
     private final PipeManager pipes = new PipeManager();
+    private final Runnable onExit;
 
-    public GamePanel() {
+
+    public GamePanel(Runnable onExit) {
+        this.onExit = onExit;
+
         setPreferredSize(new Dimension(400, 600));
         setFocusable(true);
         addKeyListener(this);
 
-        Assets.load();
         state.highScore = HighScoreManager.load();
 
         bird = new Bird(Assets.bird);
         pipes.spawn(background.mode);
 
-
         timer = new Timer(20, this);
         timer.start();
+        SwingUtilities.invokeLater(this::requestFocusInWindow);
+
+
     }
+
+
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -76,9 +83,21 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_SPACE && !state.gameOver) bird.jump();
-        if (e.getKeyCode() == KeyEvent.VK_R && state.gameOver) reset();
+
+        if (e.getKeyCode() == KeyEvent.VK_SPACE && !state.gameOver) {
+            bird.jump();
+        }
+
+        if (e.getKeyCode() == KeyEvent.VK_R && state.gameOver) {
+            reset();
+        }
+
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            timer.stop();
+            onExit.run(); // ⬅ wracamy do menu
+        }
     }
+
 
     private void reset() {
         state.score = 0;
@@ -93,6 +112,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
 
         timer.start();
+        SwingUtilities.invokeLater(this::requestFocusInWindow);
+
     }
 
     @Override public void keyReleased(KeyEvent e) {}
