@@ -10,6 +10,11 @@ public class Assets {
     public static BufferedImage pipeSnow;
     public static BufferedImage pipeFlowers;
     public static BufferedImage backgroundFlowers;
+    public static BufferedImage startButton;
+    public static BufferedImage startButtonHover;
+    public static BufferedImage ImageIcon;
+
+
 
     private static BufferedImage loadImage(String path) {
         try {
@@ -27,6 +32,11 @@ public class Assets {
         background = loadImage("/images/background.png");
         backgroundSnow = loadImage("/images/background-snow.png");
         backgroundFlowers = loadImage("/images/background-flowers.png");
+        startButton = loadImage("/images/start-button.png");
+        startButtonHover = loadImage("/images/start-button-hover.png");
+        ImageIcon = loadImage("/images/bird.png");
+
+
 
         bird = loadImage("/images/bird.png");
         pipe = loadImage("/images/pipe.png");
