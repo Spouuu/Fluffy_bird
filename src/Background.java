@@ -2,11 +2,12 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Background {
+
     private int x1 = 0;
     private int x2 = 400;
     private static final int SPEED = 1;
 
-    public boolean snowMode = false;
+    public GameMode mode = GameMode.NORMAL;
 
     public void update() {
         x1 -= SPEED;
@@ -17,7 +18,14 @@ public class Background {
     }
 
     public void draw(Graphics g) {
-        BufferedImage bg = snowMode ? Assets.backgroundSnow : Assets.background;
+        BufferedImage bg;
+
+        switch (mode) {
+            case SNOW -> bg = Assets.backgroundSnow;
+            case FLOWER -> bg = Assets.backgroundFlowers;
+            default -> bg = Assets.background;
+        }
+
         g.drawImage(bg, x1, 0, 400, 600, null);
         g.drawImage(bg, x2, 0, 400, 600, null);
     }

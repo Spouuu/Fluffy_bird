@@ -8,16 +8,30 @@ public class Assets {
     public static BufferedImage bird;
     public static BufferedImage pipe;
     public static BufferedImage pipeSnow;
+    public static BufferedImage pipeFlowers;
+    public static BufferedImage backgroundFlowers;
 
-    public static void load() {
+    private static BufferedImage loadImage(String path) {
         try {
-            background = ImageIO.read(Assets.class.getResource("/images/background.png"));
-            backgroundSnow = ImageIO.read(Assets.class.getResource("/images/background-snow.png"));
-            bird = ImageIO.read(Assets.class.getResource("/images/bird.png"));
-            pipe = ImageIO.read(Assets.class.getResource("/images/pipe.png"));
-            pipeSnow = ImageIO.read(Assets.class.getResource("/images/pipe-snow.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
+            var url = Assets.class.getResource(path);
+            if (url == null) {
+                throw new RuntimeException("BRAK PLIKU: " + path);
+            }
+            return ImageIO.read(url);
+        } catch (Exception e) {
+            throw new RuntimeException("Nie można załadować: " + path, e);
         }
     }
+
+    public static void load() {
+        background = loadImage("/images/background.png");
+        backgroundSnow = loadImage("/images/background-snow.png");
+        backgroundFlowers = loadImage("/images/background-flowers.png");
+
+        bird = loadImage("/images/bird.png");
+        pipe = loadImage("/images/pipe.png");
+        pipeSnow = loadImage("/images/pipe-snow.png");
+        pipeFlowers = loadImage("/images/pipe-flowers.png");
+    }
+
 }

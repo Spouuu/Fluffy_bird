@@ -5,5 +5,7 @@ public class GameState {
 
     public boolean newHighScore = false;
     public boolean beatenThisGame = false;
+
+    public int highScoreTimer = 0;
 }
 

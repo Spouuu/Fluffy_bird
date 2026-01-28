@@ -19,7 +19,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         state.highScore = HighScoreManager.load();
 
         bird = new Bird(Assets.bird);
-        pipes.spawn(false);
+        pipes.spawn(background.mode);
+
 
         timer = new Timer(20, this);
         timer.start();
@@ -40,6 +41,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 HighScoreManager.save(state.highScore);
             }
         }
+        if (state.newHighScore) {
+            state.highScoreTimer++;
+            if (state.highScoreTimer > 120) { // ~2 sekundy
+                state.newHighScore = false;
+            }
+        }
+
         repaint();
     }
 
@@ -50,13 +58,20 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         pipes.draw(g);
         bird.draw(g);
 
-        g.setColor(Color.WHITE);
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("Georgia", Font.PLAIN, 18));
         g.drawString("Score: " + state.score, 10, 20);
         g.drawString("Highscore: " + state.highScore, 10, 40);
 
         if (state.gameOver) {
             g.drawString("GAME OVER (R)", 130, 300);
         }
+        if (state.newHighScore && (state.highScoreTimer / 10) % 2 == 0) {
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("Georgia", Font.BOLD, 28));
+            g.drawString("HIGHSCORE!", 95, 100);
+        }
+
     }
 
     @Override
@@ -73,8 +88,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         bird = new Bird(Assets.bird);
         pipes.reset();
-        pipes.spawn(false);
-        background.snowMode = false;
+        background.mode = GameMode.NORMAL;
+        pipes.spawn(background.mode);
+
 
         timer.start();
     }
