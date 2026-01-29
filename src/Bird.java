@@ -13,7 +13,7 @@ public class Bird {
     }
 
     public void update() {
-        velocity += 1; // grawitacja
+        velocity += 1;
         y += velocity;
     }
 

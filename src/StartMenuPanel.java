@@ -68,11 +68,9 @@ public class StartMenuPanel extends JPanel implements ActionListener {
 
         if (background == null || startButton == null) return;
 
-        // tło
         background.draw(g);
 
 
-        // tytuł
         g.setFont(new Font("Georgia", Font.BOLD, 42));
         g.setColor(Color.PINK);
         String title = "FLUFFY BIRD";
@@ -80,7 +78,6 @@ public class StartMenuPanel extends JPanel implements ActionListener {
         int textWidth = fm.stringWidth(title);
         g.drawString(title, (400 - textWidth) / 2, 150);
 
-        // przycisk START (hover!)
         BufferedImage btn = hovering ? startButtonHover : startButton;
         g.drawImage(
                 btn,
