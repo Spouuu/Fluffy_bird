@@ -4,7 +4,7 @@ public class GameFrame extends JFrame {
 
     public GameFrame() {
 
-        Assets.load(); // ⬅⬅⬅ MUSI BYĆ TU, NA SAMYM POCZĄTKU
+        Assets.load();
 
         setTitle("Fluffy Bird");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
